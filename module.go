@@ -28,7 +28,7 @@ func (m *Module) Info() contracts.ModuleInfo {
 		ID:           "downloader-qbittorrent",
 		Name:         "qBittorrent",
 		Version:      "1.0.0",
-		Kind:         contracts.ModuleKindDownloader,
+		Kinds:        []contracts.ModuleKind{contracts.ModuleKindDownloader},
 		Description:  "qBittorrent download client connector",
 		Author:       "MuxCore",
 		Capabilities: []string{"downloader.torrent", "downloader.qbittorrent"},
