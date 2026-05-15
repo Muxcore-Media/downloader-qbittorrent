@@ -1,0 +1,11 @@
+{
+  "name": "qBittorrent Downloader",
+  "description": "qBittorrent download client connector for MuxCore.",
+  "version": "1.0.0",
+  "icon": "",
+  "author": "MuxCore",
+  "kind": "downloader",
+  "capabilities": ["downloader.torrent", "downloader.qbittorrent"],
+  "dependencies": [],
+  "homepage": "https://github.com/Muxcore-Media/downloader-qbittorrent"
+}
