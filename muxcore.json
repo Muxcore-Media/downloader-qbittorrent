@@ -1,0 +1,17 @@
+{
+  "id": "downloader-qbittorrent",
+  "name": "qBittorrent Downloader",
+  "version": "0.1.0",
+  "description": "qBittorrent WebUI API bridge for torrent downloads",
+  "author": "MuxCore",
+  "roles": ["downloader"],
+  "capabilities": ["downloader", "downloader.torrent", "downloader.qbittorrent", "settings"],
+  "contracts": [
+    {
+      "repo": "github.com/Muxcore-Media/contracts-downloader",
+      "interface": "Downloader",
+      "version": "v0.1.0"
+    }
+  ],
+  "minCoreVersion": "0.4.0"
+}
