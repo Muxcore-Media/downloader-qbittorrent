@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Muxcore-Media/core/sdk/go/module/meshtls"
 	"log/slog"
 	"net"
 	"net/http"
@@ -217,7 +218,12 @@ func (m *Module) Start(ctx context.Context) error {
 	}
 	m.lis = lis
 	m.grpcAddr = lis.Addr().String()
-	m.grpcSrv = grpc.NewServer()
+	srv, err := meshtls.NewServer()
+	if err != nil {
+		_ = m.lis.Close()
+		return fmt.Errorf("gRPC mesh TLS: %w", err)
+	}
+	m.grpcSrv = srv
 	cdlv1.RegisterDownloaderServiceServer(m.grpcSrv, &contractsServer{m: m})
 	modulesdk.RegisterSettings(m.grpcSrv, m.id, m)
 
