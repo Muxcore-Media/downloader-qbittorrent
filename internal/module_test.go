@@ -87,10 +87,11 @@ func getHealth(t *testing.T, addr string) (int, string) {
 func TestFixtureAddTorrentCompletesViaRPC(t *testing.T) {
 	pub := &recPub{}
 	m := internal.NewModule(internal.Config{
-		Fixture:  true,
-		GRPCAddr: "127.0.0.1:0",
-		HTTPAddr: "127.0.0.1:0",
-		Publish:  pub.Publish,
+		Fixture:       true,
+		GRPCAddr:      "127.0.0.1:0",
+		HTTPAddr:      "127.0.0.1:0",
+		Publish:       pub.Publish,
+		DownloadRoots: []string{"/downloads"},
 	})
 	ctx := context.Background()
 	if err := m.Start(ctx); err != nil {
@@ -323,5 +324,30 @@ func TestQBITEnvAliases(t *testing.T) {
 	m := internal.NewModule(internal.Config{})
 	if err := m.Health(context.Background()); err == nil {
 		t.Fatal("expected probe failure")
+	}
+}
+
+func TestAddTorrentRPCRejectsSSRFAndPathEscape(t *testing.T) {
+	m := internal.NewModule(internal.Config{
+		Fixture: true, GRPCAddr: "127.0.0.1:0", HTTPAddr: "127.0.0.1:0",
+		DownloadRoots: []string{"/downloads"},
+	})
+	ctx := context.Background()
+	if err := m.Start(ctx); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = m.Stop(ctx) }()
+	client := dialDownloader(t, m.ListenAddr())
+	magnet := "magnet:?xt=urn:btih:0123456789ABCDEF0123456789ABCDEF01234567"
+	for name, req := range map[string]*cdlv1.AddTorrentRequest{
+		"metadata url": {TorrentUrl: "http://169.254.169.254/latest/meta-data/"},
+		"loopback url": {TorrentUrl: "http://127.0.0.1:9/x.torrent"},
+		"save /etc":    {TorrentUrl: magnet, SavePath: "/etc"},
+		"save sibling": {TorrentUrl: magnet, SavePath: "/downloads-evil"},
+		"save dotdot":  {TorrentUrl: magnet, SavePath: "/downloads/../etc"},
+	} {
+		if _, err := client.AddTorrent(ctx, req); err == nil {
+			t.Errorf("%s: expected rejection", name)
+		}
 	}
 }

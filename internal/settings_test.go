@@ -40,3 +40,13 @@ func TestUpdateSettingUnknownKey(t *testing.T) {
 		t.Fatal("expected unknown key error")
 	}
 }
+
+func TestUpdateSettingRejectsMetadataBaseURL(t *testing.T) {
+	m := internal.NewModule(internal.Config{Fixture: true})
+	if err := m.UpdateSetting("base_url", "http://169.254.169.254/"); err == nil {
+		t.Fatal("metadata base_url must be rejected")
+	}
+	if err := m.UpdateSetting("base_url", "http://192.168.1.10:8080"); err != nil {
+		t.Fatalf("LAN base_url must be accepted: %v", err)
+	}
+}

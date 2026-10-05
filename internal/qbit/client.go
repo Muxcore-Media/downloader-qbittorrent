@@ -38,14 +38,16 @@ func (c *Client) http() *http.Client {
 		}
 		return c.HTTPClient
 	}
-	jar, _ := cookiejar.New(nil)
-	c.HTTPClient = &http.Client{Timeout: 30 * time.Second, Jar: jar}
+	c.HTTPClient = newGuardedHTTPClient()
 	return c.HTTPClient
 }
 
 func (c *Client) apiURL(path string) (string, error) {
 	if c.BaseURL == "" {
 		return "", fmt.Errorf("qbittorrent base URL required")
+	}
+	if err := ValidateBaseURL(c.BaseURL); err != nil {
+		return "", fmt.Errorf("qbittorrent base URL rejected: %w", err)
 	}
 	base := strings.TrimRight(c.BaseURL, "/")
 	return base + "/api/v2" + path, nil

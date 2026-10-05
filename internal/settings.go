@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Muxcore-Media/core/pkg/contracts"
+	"github.com/Muxcore-Media/downloader-qbittorrent/internal/qbit"
 )
 
 func (m *Module) Settings() []contracts.SettingDef {
@@ -42,6 +43,11 @@ func (m *Module) UpdateSetting(key, value string) error {
 	defer m.cfgMu.Unlock()
 	switch key {
 	case "base_url":
+		if value != "" {
+			if err := qbit.ValidateBaseURL(value); err != nil {
+				return fmt.Errorf("base_url rejected: %w", err)
+			}
+		}
 		m.base = value
 	case "username":
 		if value != "" {

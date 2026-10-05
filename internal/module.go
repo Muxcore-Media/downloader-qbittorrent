@@ -32,11 +32,12 @@ type Module struct {
 	grpcAddr string
 	httpAddr string
 
-	cfgMu    sync.RWMutex
-	base     string
-	username string
-	password string
-	fixture  bool
+	cfgMu         sync.RWMutex
+	base          string
+	downloadRoots []string
+	username      string
+	password      string
+	fixture       bool
 
 	client  *qbit.Client
 	fix     *qbit.FixtureClient
@@ -62,6 +63,9 @@ type Config struct {
 	Publish    EventPublisher
 	HTTPClient *http.Client
 	PollEvery  time.Duration
+	// DownloadRoots confines AddTorrent save_path; defaults to
+	// QBIT_DOWNLOAD_ROOTS / DOWNLOAD_DIR.
+	DownloadRoots []string
 }
 
 func envFirst(keys ...string) string {
@@ -129,17 +133,21 @@ func NewModule(cfg Config) *Module {
 	if poll <= 0 {
 		poll = 2 * time.Second
 	}
+	if len(cfg.DownloadRoots) == 0 {
+		cfg.DownloadRoots = downloadRootsFromEnv()
+	}
 	useFixture := fixtureEnabled(cfg.Fixture, cfg.BaseURL)
 	m := &Module{
-		id:        cfg.ID,
-		grpcAddr:  cfg.GRPCAddr,
-		httpAddr:  cfg.HTTPAddr,
-		base:      cfg.BaseURL,
-		username:  cfg.Username,
-		password:  cfg.Password,
-		fixture:   useFixture,
-		publish:   cfg.Publish,
-		pollEvery: poll,
+		id:            cfg.ID,
+		grpcAddr:      cfg.GRPCAddr,
+		httpAddr:      cfg.HTTPAddr,
+		base:          cfg.BaseURL,
+		downloadRoots: cfg.DownloadRoots,
+		username:      cfg.Username,
+		password:      cfg.Password,
+		fixture:       useFixture,
+		publish:       cfg.Publish,
+		pollEvery:     poll,
 	}
 	if useFixture {
 		m.fix = qbit.NewFixtureClient()
@@ -433,8 +441,15 @@ func (s *contractsServer) AddTorrent(ctx context.Context, req *cdlv1.AddTorrentR
 	if url == "" {
 		return nil, fmt.Errorf("torrent_url required")
 	}
+	if err := validateTorrentURL(ctx, url); err != nil {
+		return nil, err
+	}
+	savePath, err := confineSavePath(req.GetSavePath(), s.m.downloadRoots)
+	if err != nil {
+		return nil, err
+	}
 	if s.m.fixture {
-		hash, t, err := s.m.fix.AddTorrent(ctx, url, req.GetSavePath(), req.GetCategory(), req.GetPaused())
+		hash, t, err := s.m.fix.AddTorrent(ctx, url, savePath, req.GetCategory(), req.GetPaused())
 		if err != nil {
 			return nil, err
 		}
@@ -446,7 +461,7 @@ func (s *contractsServer) AddTorrent(ctx context.Context, req *cdlv1.AddTorrentR
 		}
 		return &cdlv1.AddTorrentResponse{TorrentId: hash, Name: t.Name, InfoHash: hash}, nil
 	}
-	if err := s.m.client.AddTorrent(ctx, url, req.GetSavePath(), req.GetCategory(), req.GetPaused()); err != nil {
+	if err := s.m.client.AddTorrent(ctx, url, savePath, req.GetCategory(), req.GetPaused()); err != nil {
 		return nil, err
 	}
 	hash := qbit.ResolveHash(url)
