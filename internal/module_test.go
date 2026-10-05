@@ -79,7 +79,7 @@ func getHealth(t *testing.T, addr string) (int, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, _ := io.ReadAll(resp.Body)
 	return resp.StatusCode, string(body)
 }
@@ -96,7 +96,7 @@ func TestFixtureAddTorrentCompletesViaRPC(t *testing.T) {
 	if err := m.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
-	defer m.Stop(ctx)
+	defer func() { _ = m.Stop(ctx) }()
 
 	client := dialDownloader(t, m.ListenAddr())
 	resp, err := client.AddTorrent(ctx, &cdlv1.AddTorrentRequest{
@@ -155,7 +155,7 @@ func TestMockWebUIHealthAndList(t *testing.T) {
 	if err := m.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
-	defer m.Stop(ctx)
+	defer func() { _ = m.Stop(ctx) }()
 
 	if err := m.Health(ctx); err != nil {
 		t.Fatalf("health: %v", err)
@@ -208,7 +208,7 @@ func TestMockLivePollCompleted(t *testing.T) {
 	if err := m.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
-	defer m.Stop(ctx)
+	defer func() { _ = m.Stop(ctx) }()
 
 	client := dialDownloader(t, m.ListenAddr())
 	magnet := "magnet:?xt=urn:btih:cccccccccccccccccccccccccccccccccccccccc&dn=PollMe"
@@ -244,7 +244,7 @@ func TestMockLivePollFailed(t *testing.T) {
 	if err := m.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
-	defer m.Stop(ctx)
+	defer func() { _ = m.Stop(ctx) }()
 
 	client := dialDownloader(t, m.ListenAddr())
 	magnet := "magnet:?xt=urn:btih:dddddddddddddddddddddddddddddddddddddddd&dn=FailMe"
@@ -273,7 +273,7 @@ func TestHealthz503WhenMockClosed(t *testing.T) {
 	if err := m.Start(ctx); err != nil {
 		t.Fatal(err)
 	}
-	defer m.Stop(ctx)
+	defer func() { _ = m.Stop(ctx) }()
 	mock.Close()
 	code, _ := getHealth(t, m.HTTPListenAddr())
 	if code != http.StatusServiceUnavailable {

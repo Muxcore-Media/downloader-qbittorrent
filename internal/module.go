@@ -261,7 +261,9 @@ func (m *Module) Stop(ctx context.Context) error {
 		_ = m.httpSrv.Shutdown(ctx)
 	}
 	if m.mc != nil {
-		m.mc.Close()
+		if err := m.mc.Close(); err != nil {
+			slog.Warn("close mesh client", "error", err)
+		}
 	}
 	return nil
 }
