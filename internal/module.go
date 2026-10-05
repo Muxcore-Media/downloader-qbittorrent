@@ -19,6 +19,7 @@ import (
 	"github.com/Muxcore-Media/core/pkg/contracts"
 	"github.com/Muxcore-Media/core/sdk/go/client"
 	modulesdk "github.com/Muxcore-Media/core/sdk/go/module"
+	manifest "github.com/Muxcore-Media/downloader-qbittorrent"
 	"github.com/Muxcore-Media/downloader-qbittorrent/internal/qbit"
 )
 
@@ -177,7 +178,7 @@ func (m *Module) Info() contracts.ModuleInfo {
 	return contracts.ModuleInfo{
 		ID:           m.id,
 		Name:         "qBittorrent Downloader",
-		Version:      "0.1.0",
+		Version:      modulesdk.ManifestVersion(manifest.ManifestJSON),
 		Roles:        []string{"downloader"},
 		Description:  "qBittorrent WebUI API bridge for torrent downloads",
 		Author:       "MuxCore",
